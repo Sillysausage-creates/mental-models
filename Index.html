@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Mental Models">
+<title>Mental Models</title>
+<style>
+:root {
+  --bg: #0f0e0d;
+  --surface: #1c1a18;
+  --surface2: #242220;
+  --border: #2e2b28;
+  --text: #e2ddd6;
+  --text2: #8c8880;
+  --text3: #5a5752;
+  --accent: #c8a96e;
+  --accent-dim: #7a6540;
+  --considered-bg: #1a2e1c;
+  --considered-border: #2d5235;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, 'Helvetica Neue', sans-serif; font-size: 15px; line-height: 1.5; overscroll-behavior: none; }
+#app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
+#header { padding: calc(var(--safe-top) + 14px) 16px 0; background: var(--bg); flex-shrink: 0; }
+.app-title { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; font-weight: 600; }
+.mode-toggle { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-radius: 11px; padding: 3px; margin-bottom: 12px; border: 0.5px solid var(--border); }
+.mode-btn { border: none; background: transparent; color: var(--text2); font-size: 13px; font-weight: 500; padding: 8px; border-radius: 9px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.mode-btn.active { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border); }
+.search-wrap { position: relative; margin-bottom: 10px; }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 15px; pointer-events: none; }
+#search { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 10px 12px 10px 34px; color: var(--text); font-size: 15px; font-family: inherit; outline: none; -webkit-appearance: none; }
+#search::placeholder { color: var(--text3); }
+#search:focus { border-color: var(--accent-dim); }
+.cats-wrap { overflow-x: auto; display: flex; gap: 6px; padding-bottom: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.cats-wrap::-webkit-scrollbar { display: none; }
+.cat-pill { flex-shrink: 0; border: 0.5px solid var(--border); background: transparent; color: var(--text2); font-size: 12px; padding: 5px 13px; border-radius: 99px; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.15s; }
+.cat-pill.active { background: var(--accent); color: #0f0e0d; border-color: var(--accent); font-weight: 600; }
+.stats-bar { display: flex; gap: 12px; padding: 0 0 10px; }
+.stat-item { font-size: 11px; color: var(--text3); }
+.stat-item span { color: var(--accent); font-weight: 600; }
+#scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px; }
+.sec-header { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text3); padding: 18px 0 7px; font-weight: 600; }
+.model-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 11px; margin-bottom: 6px; overflow: hidden; }
+.model-card.considered { background: var(--considered-bg); border-color: var(--considered-border); }
+.model-card.munger-add { border-left: 2px solid var(--accent-dim); }
+.model-header { display: flex; align-items: center; padding: 12px 13px; cursor: pointer; gap: 10px; user-select: none; -webkit-user-select: none; }
+.model-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.considered .model-check { background: var(--considered-border); border-color: var(--considered-border); }
+.check-mark { display: none; color: #60c070; font-size: 10px; font-weight: 700; }
+.considered .check-mark { display: block; }
+.model-name { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--text); line-height: 1.3; }
+.considered .model-name { color: var(--text2); }
+.src-badge { font-size: 9px; letter-spacing: 0.07em; padding: 2px 6px; border-radius: 4px; font-weight: 600; flex-shrink: 0; }
+.src-badge.m { background: rgba(24,95,165,0.2); color: #6aacf0; }
+.src-badge.both { background: rgba(15,110,86,0.2); color: #5ac492; }
+.src-badge.fs { background: rgba(133,79,11,0.2); color: #d4a060; }
+.expand-icon { color: var(--text3); font-size: 11px; transition: transform 0.2s; flex-shrink: 0; }
+.model-card.open .expand-icon { transform: rotate(180deg); }
+.model-body { padding: 0 13px 13px; border-top: 0.5px solid var(--border); }
+.model-desc { font-size: 13px; color: var(--text2); line-height: 1.65; padding-top: 10px; }
+.model-cat-tag { display: inline-block; font-size: 10px; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; margin-top: 8px; }
+.consider-btn { margin-top: 10px; width: 100%; padding: 8px; border-radius: 8px; border: 0.5px solid var(--border); background: transparent; color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer; transition: all 0.15s; }
+.considered .consider-btn { color: #60c070; border-color: var(--considered-border); }
+#suggest-view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.suggest-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px 16px; }
+.suggest-intro { font-size: 13px; color: var(--text2); margin-bottom: 12px; line-height: 1.6; }
+#situation { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px; color: var(--text); font-size: 15px; font-family: inherit; outline: none; resize: none; -webkit-appearance: none; line-height: 1.55; }
+#situation:focus { border-color: var(--accent-dim); }
+#situation::placeholder { color: var(--text3); }
+.build-btn { width: 100%; margin-top: 10px; padding: 14px; background: var(--accent); color: #0f0e0d; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: opacity 0.15s; }
+.build-btn:active { opacity: 0.82; }
+#prompt-output { display: none; margin-top: 18px; }
+.output-label { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; font-weight: 600; }
+.prompt-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px; font-size: 12px; color: var(--text2); line-height: 1.65; max-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.action-btn { padding: 13px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; transition: opacity 0.15s; text-align: center; }
+.action-btn.primary { background: var(--surface2); border-color: var(--accent-dim); color: var(--accent); }
+.action-btn:active { opacity: 0.7; }
+.copy-confirm { display: none; font-size: 11px; color: #60c070; text-align: center; margin-top: 7px; }
+.how-to { margin-top: 20px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px; }
+.how-to-title { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; font-weight: 600; }
+.how-to li { font-size: 13px; color: var(--text2); line-height: 1.8; margin-left: 16px; }
+.safe-bottom { height: calc(var(--safe-bottom) + 10px); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div class="app-title">Mental Models &middot; Latticework</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-browse" onclick="setMode('browse')">Browse</button>
+      <button class="mode-btn" id="btn-suggest" onclick="setMode('suggest')">Suggest &rarr;</button>
+    </div>
+    <div id="browse-controls">
+      <div class="search-wrap">
+        <span class="search-icon">&#9906;</span>
+        <input id="search" type="search" placeholder="Search models&hellip;" oninput="render()" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="cats-wrap" id="cats"></div>
+      <div class="stats-bar">
+        <div class="stat-item" id="count"></div>
+        <div class="stat-item" id="considered-stat"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scroll">
+    <div id="list"></div>
+    <div class="safe-bottom"></div>
+  </div>
+
+  <div id="suggest-view">
+    <div class="suggest-scroll">
+      <p class="suggest-intro">Describe the decision or situation you are working through. This stays entirely on your device.</p>
+      <textarea id="situation" rows="6" placeholder="e.g. I am deciding whether to hire 3 people before our revenue is confirmed. We have strong pipeline but two deals slipped last quarter..."></textarea>
+      <button class="build-btn" onclick="buildPrompt()">Build my prompt</button>
+      <div id="prompt-output">
+        <div class="output-label">Ready to paste into Claude.ai</div>
+        <div class="prompt-box" id="prompt-text"></div>
+        <div class="action-row">
+          <button class="action-btn" onclick="copyPrompt()">Copy prompt</button>
+          <button class="action-btn primary" onclick="openClaude()">Open Claude.ai &nearr;</button>
+        </div>
+        <div class="copy-confirm" id="copy-confirm">Copied to clipboard &check;</div>
+      </div>
+      <div class="how-to">
+        <div class="how-to-title">How to use</div>
+        <ol>
+          <li>Describe your situation above</li>
+          <li>Tap &ldquo;Build my prompt&rdquo; to generate a formatted prompt</li>
+          <li>Tap &ldquo;Copy prompt&rdquo; then &ldquo;Open Claude.ai&rdquo;</li>
+          <li>Paste and send &mdash; Claude returns 6&ndash;8 relevant models with specific questions</li>
+          <li>Switch to Browse, find each model, mark as considered</li>
+        </ol>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var SECTIONS=[{id:"general",label:"General Thinking",models:[{name:"The Map is Not the Territory",src:"both",note:"Our models of reality are not reality itself — update them when they diverge from what you observe"},{name:"Circle of Competence",src:"both",note:"Know the edges of what you truly understand; operate inside them, expand only deliberately"},{name:"First Principles Thinking",src:"both",note:"Break problems to fundamental truths; build back up rather than reasoning by analogy or convention"},{name:"Thought Experiment",src:"fs",note:"The mind's sandbox — explore implications and test assumptions without real-world cost"},{name:"Second-Order Thinking",src:"both",note:"Ask 'and then what?' — consider ripple effects, not just immediate consequences"},{name:"Probabilistic Thinking",src:"both",note:"Navigate uncertainty by estimating odds, checking assumptions, and updating beliefs with new evidence"},{name:"Inversion",src:"both",note:"Ask what guarantees failure, not just what drives success — avoiding stupidity is often easier than achieving brilliance"},{name:"Occam's Razor",src:"both",note:"Among competing explanations, prefer the simplest one that adequately fits the facts"},{name:"Hanlon's Razor",src:"both",note:"Never attribute to malice what stupidity or incompetence adequately explains"},{name:"Two-Track Analysis",src:"m",note:"Run rational analysis and psychological analysis simultaneously — most people only use one track"},{name:"Checklist Approach",src:"m",note:"Systematic pre-decision checklists catch errors that clever minds rationalise away in the moment"},{name:"Lollapalooza Effect",src:"m",note:"When multiple biases and forces align in the same direction, outcomes become extreme and non-linear — Munger's signature insight"},{name:"Man-with-a-Hammer Tendency",src:"m",note:"Over-relying on a single model distorts every problem to fit it; build a wide latticework instead"},{name:"Vivification",src:"m",note:"Making an idea vivid and concrete makes it memorable and actionable — abstract principles stay inert"},{name:"Scenario Analysis",src:"m",note:"Map multiple plausible futures, not just a single expected case, before committing to a path"}]},{id:"physics",label:"Physics, Chemistry & Biology",models:[{name:"Relativity",src:"both",note:"Perceptions are shaped by vantage point — two people see the same event differently; seek diverse frames before concluding"},{name:"Reciprocity",src:"both",note:"Go positive and go first — the world tends to return what you give; be the catalyst"},{name:"Thermodynamics & Entropy",src:"both",note:"Energy is conserved but disorder increases — maintaining order and quality requires continuous sustained effort"},{name:"Inertia",src:"both",note:"Objects, habits, and organisations resist change; getting started is the hardest part, momentum carries you forward"},{name:"Friction & Viscosity",src:"fs",note:"Invisible resistance slows everything — reducing friction is often more powerful than adding force"},{name:"Velocity",src:"fs",note:"Speed with direction; raw speed without the right trajectory is wasted motion"},{name:"Leverage",src:"both",note:"Small force, strategically applied, yields outsized results — but the downside is equally amplified"},{name:"Activation Energy",src:"fs",note:"The upfront effort required to start a reaction — recognise it as a one-time ignition cost, not a permanent barrier"},{name:"Catalysts",src:"fs",note:"Accelerate change without being consumed by it — people, books, and events can all act as catalysts"},{name:"Alloying",src:"fs",note:"Combining different elements creates something stronger than any component alone; applies to skills, teams, and ideas"},{name:"Natural Selection & Extinction",src:"both",note:"Traits that aid survival propagate; those that don't lead to extinction — applies to businesses and ideas"},{name:"The Red Queen Effect",src:"both",note:"You must keep running just to stay in place — complacency is the fastest path to obsolescence"},{name:"Ecosystems",src:"both",note:"Nothing exists in isolation; actions in one part of a system cascade through the whole"},{name:"Niches",src:"both",note:"Specialists thrive in stable environments; generalists survive disruption — know which game you're playing"},{name:"Self-Preservation",src:"both",note:"The instinct to protect existence and identity; left unchecked, it creates stagnation and poor decisions"},{name:"Replication",src:"fs",note:"Copy what works to establish a baseline, then innovate — exponential spread is both power and risk"},{name:"Cooperation",src:"both",note:"The foundation of civilisation; requires repeated interaction, shared benefit, and anti-defection mechanisms"},{name:"Hierarchical Organisation",src:"both",note:"Hierarchy enables scale and specialisation but breeds status contests that can destroy the system"},{name:"Incentives",src:"both",note:"The primary driver of human behaviour — show me the incentive and I'll show you the outcome"},{name:"Tendency to Minimise Energy Output",src:"both",note:"All systems follow the path of least resistance — awareness of this allows deliberate correction"}]},{id:"systems",label:"Systems Thinking",models:[{name:"Feedback Loops",src:"both",note:"Output influences input; positive loops amplify, negative loops dampen — understand which you're in"},{name:"Equilibrium",src:"both",note:"Systems continuously adjust toward balance but rarely stay there — the endless adjustments are life itself"},{name:"Bottlenecks",src:"both",note:"The constraint limits the whole system; speed up the slowest part, not the already-fast parts"},{name:"Scale",src:"both",note:"Systems change character as they grow — what works at 10 breaks at 10,000; build for scale from the start"},{name:"Margin of Safety",src:"both",note:"Build in buffer for when you're wrong — not overcaution, the foundation of surviving uncertainty"},{name:"Churn",src:"fs",note:"Some turnover is healthy and renewing; too much kills, too little stagnates — find the right rate"},{name:"Algorithms",src:"fs",note:"Repeatable, unambiguous processes that reliably produce results by filtering noise from signal"},{name:"Critical Mass",src:"both",note:"The tipping point where change becomes self-sustaining — know how much input is needed to reach it"},{name:"Emergence",src:"both",note:"Combinations produce properties no individual part possesses — mix things and watch what unexpectedly appears"},{name:"Irreducibility",src:"fs",note:"Some things cannot be decomposed further without losing their essence — zoom out rather than reduce"},{name:"Law of Diminishing Returns",src:"both",note:"Easy wins come first; each additional unit of effort yields less — know when to stop optimising"}]},{id:"numeracy",label:"Numeracy & Mathematics",models:[{name:"Sampling",src:"fs",note:"Conclusions are only as valid as the sample — larger samples reveal truth, small samples reliably mislead"},{name:"Randomness",src:"fs",note:"True chaos exists and is immune to patterns; humans systematically see order where there is none"},{name:"Regression to the Mean",src:"both",note:"Extreme results are followed by average ones — don't mistake a great run for a permanent new baseline"},{name:"Multiply by Zero",src:"fs",note:"One fatal flaw negates every other strength — identify and eliminate your zeroes first"},{name:"Equivalence",src:"fs",note:"Different inputs can produce identical outputs — look for underlying patterns, not surface differences"},{name:"Surface Area",src:"fs",note:"More exposure means more interaction, more opportunity, and more vulnerability — calibrate intentionally"},{name:"Global and Local Maxima",src:"fs",note:"A good solution stops the search for the best one — sometimes you must descend to find a higher peak"},{name:"Expected Value",src:"m",note:"Probability x magnitude — think in distributions, not point forecasts; the core of rational decision-making under uncertainty"},{name:"Bayes' Rule / Bayesian Updating",src:"m",note:"Update beliefs proportionally to new evidence; prior + new data = new posterior — the engine of learning"},{name:"Power Laws",src:"m",note:"Outcomes are not normally distributed; a tiny minority of causes, actions, or people drive the vast majority of results"},{name:"Pareto Principle (80/20)",src:"m",note:"Roughly 80% of effects come from 20% of causes — focus relentlessly on the vital few, ignore the trivial many"},{name:"Compounding",src:"m",note:"Small consistent gains multiply into extraordinary outcomes over time — the most powerful force in investing and life"},{name:"Optionality / Asymmetric Payoffs",src:"m",note:"Seek positions with capped downside and uncapped upside; preserve the ability to act when conditions improve"}]},{id:"economics",label:"Microeconomics",models:[{name:"Scarcity",src:"both",note:"Infinite wants, finite resources — scarcity creates value and drives all economic behaviour"},{name:"Supply and Demand",src:"both",note:"The fundamental push and pull determining price and allocation in any market"},{name:"Optimisation",src:"both",note:"Make the most of what you have — but over-optimisation creates fragility; always preserve some slack"},{name:"Trade-offs / Opportunity Cost",src:"both",note:"Every yes is a no to everything else — wisdom is knowing the full cost of every choice made"},{name:"Specialisation / Comparative Advantage",src:"both",note:"Focus on what you do best relative to alternatives, not just in absolute terms"},{name:"Interdependence",src:"fs",note:"No entity is an island; recognising dependencies enables leverage but also reveals vulnerability"},{name:"Efficiency vs Resilience",src:"fs",note:"Maximum efficiency creates dangerous fragility — short-term inefficiency is often the price of long-term survival"},{name:"Debt",src:"fs",note:"Powerful tool for growth, but each unit of debt reduces room to absorb surprise — respect its edge"},{name:"Monopoly and Competition",src:"both",note:"Competition keeps markets efficient; monopoly rewards big bets — both are necessary in balance"},{name:"Creative Destruction",src:"both",note:"New innovations replace old ones; the very success of incumbents plants the seeds of their own disruption"},{name:"Gresham's Law",src:"both",note:"Bad drives out good in any domain without consequences — reversing this requires constant effort"},{name:"Bubbles",src:"fs",note:"Collective enthusiasm detaches from fundamental value; every bubble eventually pops — stay anchored to value, not narrative"},{name:"Principal-Agent Problem",src:"m",note:"Agents act in their own interest, not necessarily the principal's — align incentives or expect divergence"},{name:"Information Asymmetry",src:"m",note:"One party knows more than the other; the informed party nearly always has the structural advantage"},{name:"Moral Hazard",src:"m",note:"Insulating people from consequences changes their risk-taking behaviour, always in the direction of more risk"},{name:"Adverse Selection",src:"m",note:"When one side has hidden information, the worse options disproportionately show up in the pool"},{name:"Economic Moats",src:"m",note:"Durable structural advantages — cost, switching costs, network effects, brand — that protect returns over time"},{name:"Network Effects",src:"m",note:"Each additional user increases value for all users — creates winner-take-most dynamics at scale"},{name:"Switching Costs",src:"m",note:"The pain of changing providers creates stickiness — customers stay not from satisfaction but from friction"}]},{id:"military",label:"Military & Strategy",models:[{name:"Seeing the Front",src:"fs",note:"Leaders must verify conditions firsthand — maps, reports, and advisors all carry bias and blind spots"},{name:"Asymmetric Warfare",src:"fs",note:"When outgunned, play by different rules; asymmetry can neutralise a superior opponent's advantages"},{name:"Two-Front War",src:"fs",note:"Splitting effort weakens both fronts — eliminate internal conflict before engaging external competition"},{name:"Counterinsurgency",src:"fs",note:"Responding to asymmetric tactics requires cleverness over force — gains come from strategy, not volume"},{name:"Mutually Assured Destruction",src:"fs",note:"Paradoxically, strength can prevent conflict; but it also makes any accident catastrophically consequential"}]},{id:"human",label:"Human Nature & Judgment",models:[{name:"Trust",src:"both",note:"The modern world runs on trust — trusting systems are dramatically more efficient than suspicious ones"},{name:"Bias from Incentives",src:"both",note:"We distort thinking to align with self-interest without realising it — the salesman genuinely believes in his product"},{name:"Pavlovian Association",src:"both",note:"Emotions attach to associated objects and signals, not just direct causes — we are conditioned more than we know"},{name:"Envy & Jealousy",src:"both",note:"Desire for what others have drives irrational behaviour — any system ignorant of this eventually self-destructs"},{name:"Liking/Loving & Disliking/Hating Bias",src:"both",note:"We overrate things we like and dismiss things we dislike, missing crucial nuance in both directions"},{name:"Denial",src:"both",note:"Reality-avoidance as a coping mechanism — powerful short-term but destructive when it enables harmful inertia"},{name:"Availability Heuristic",src:"both",note:"We overweight what's recent, vivid, and salient — the most accessible answer is rarely the most accurate"},{name:"Representativeness Heuristic",src:"both",note:"Judging by resemblance to a prototype leads to base rate neglect, stereotyping, and conjunction errors"},{name:"Social Proof",src:"both",note:"We look to others for behavioural guidance — cohesion-building but also a source of mass foolishness"},{name:"Narrative Instinct",src:"both",note:"Humans construct meaning through story — organisations, nations, and beliefs all run on narrative"},{name:"Curiosity Instinct",src:"both",note:"The deepest driver of human learning and innovation — we explore even without direct incentive"},{name:"Language Instinct",src:"both",note:"Grammar is wired, not just learned — language enables coordination, persuasion, and shared reality"},{name:"First-Conclusion Bias",src:"both",note:"The first idea gets in and the mind closes — deliberate routines are needed to keep the door open"},{name:"Overgeneralise from Small Samples",src:"both",note:"We draw broad conclusions from thin evidence — the Law of Large Numbers is constantly ignored"},{name:"Relative Satisfaction & Misery",src:"both",note:"Happiness is relative to peers and past, never absolute — we are poor predictors of our own future feelings"},{name:"Commitment & Consistency Bias",src:"both",note:"We cling to prior commitments and prior selves even when evidence clearly demands a change"},{name:"Hindsight Bias",src:"both",note:"Once we know the outcome, we convince ourselves we knew it all along — keep decision journals to counter"},{name:"Sensitivity to Fairness",src:"both",note:"Justice is a deep instinct — violations trigger reciprocal action and quickly and permanently destroy trust"},{name:"Fundamental Attribution Error",src:"both",note:"We over-attribute others' behaviour to innate traits rather than situation — then are consistently surprised"},{name:"Influence of Stress",src:"both",note:"Stress amplifies every bias and collapses complex reasoning — you fall to your training, not your intentions"},{name:"Survivorship Bias",src:"both",note:"We see the winners, not the silent graveyard of losers who did the same things and got unlucky"},{name:"Tendency to Want to Do Something",src:"both",note:"Status and boredom pressure us to act even when inaction is the correct and optimal move"},{name:"Confirmation Bias / Falsification",src:"both",note:"We seek evidence that confirms what we believe — actively seek disconfirmation to counter this"},{name:"Hyperbolic Discounting",src:"m",note:"Immediate rewards are over-weighted vs future rewards — we consistently sacrifice long-term for now"},{name:"Overoptimism Tendency",src:"m",note:"Systematic positive bias in our own predictions — nearly everyone believes they are above average"},{name:"Deprival-Superreaction (Loss Aversion)",src:"m",note:"Losses register as roughly twice as painful as equivalent gains — asymmetric emotional accounting distorts decisions"},{name:"Excessive Self-Regard",src:"m",note:"We overestimate our own abilities, judgment, and contributions — the Lake Wobegon effect"},{name:"Status Quo Bias",src:"m",note:"The default option wins without active forcing functions — inertia dressed up as considered preference"},{name:"Anchoring Bias",src:"m",note:"The first number heard skews all subsequent estimates, even when that anchor is obviously arbitrary"},{name:"Authority-Misinfluence",src:"m",note:"We defer to experts and authority figures well beyond the domain of their actual competence"},{name:"Reason-Respecting Tendency",src:"m",note:"'Because' increases compliance even when the reason given is weak, irrelevant, or circular"},{name:"Use-It-or-Lose-It Tendency",src:"m",note:"Skills, knowledge, and relationships atrophy without regular exercise — use them deliberately or lose them"},{name:"Twaddle Tendency",src:"m",note:"The impulse to fill silence and appear engaged with meaningless chatter rather than saying nothing useful"},{name:"Mental Accounting",src:"m",note:"We treat money differently based on its perceived category or origin — logically irrational, behaviourally very real"},{name:"Black Swan Events",src:"m",note:"Extreme, low-probability, high-impact events that cannot be predicted but must be planned for structurally"},{name:"Gray Rhino Risks",src:"m",note:"Obvious, high-probability large risks we neglect anyway — the warning is fully visible; we simply look away"}]},{id:"art",label:"Art & Narrative",models:[{name:"Audience",src:"fs",note:"The silent co-creator of all communication — great work is designed for them without being dictated by them"},{name:"Genre",src:"fs",note:"Conventions create shared expectations — honour them enough to be understood, break them enough to be interesting"},{name:"Contrast",src:"fs",note:"Opposites create attention and meaning — our brains are wired for change and difference, not continuity"},{name:"Framing",src:"fs",note:"Context shapes perception — the same information, framed differently, produces reliably different decisions"},{name:"Rhythm",src:"fs",note:"Recurring patterns give structure to time — routines and habits are life's underlying rhythm"},{name:"Representation",src:"fs",note:"Symbols shape reality as much as they reflect it — the frame eventually becomes the picture itself"},{name:"Plot",src:"fs",note:"Causally linked events leading to transformation — the story you tell about your own obstacles matters most"},{name:"Character",src:"fs",note:"Character is destiny — but also a journey; obstacles reveal and forge it, today's choices compound"},{name:"Setting",src:"fs",note:"Environment shapes behaviour — deliberately change your setting to change yourself; if you don't, it changes you"},{name:"Performance",src:"fs",note:"Live presence is irreducible — the audience becomes a co-creator in every ephemeral moment"}]}];
+
+var activeCat='all',openCards=new Set(),mode='browse',considered=new Set();
+try{var s=localStorage.getItem('mm_considered');if(s)considered=new Set(JSON.parse(s));}catch(e){}
+function saveConsidered(){try{localStorage.setItem('mm_considered',JSON.stringify([...considered]));}catch(e){}}
+
+function buildCats(){
+  var cats=[{id:'all',label:'All'}].concat(SECTIONS.map(function(s){return{id:s.id,label:s.label};}));
+  document.getElementById('cats').innerHTML=cats.map(function(c){
+    return '<button class="cat-pill'+(c.id===activeCat?' active':'')+'" onclick="setCat(\''+c.id+'\')">'+c.label+'</button>';
+  }).join('');
+}
+
+function setCat(id){activeCat=id;buildCats();render();document.getElementById('scroll').scrollTo(0,0);}
+
+function render(){
+  var q=(document.getElementById('search').value||'').toLowerCase().trim();
+  var secs=activeCat==='all'?SECTIONS:SECTIONS.filter(function(s){return s.id===activeCat;});
+  var total=0,html='';
+  secs.forEach(function(sec){
+    var models=sec.models;
+    if(q)models=models.filter(function(m){return m.name.toLowerCase().includes(q)||m.note.toLowerCase().includes(q);});
+    if(!models.length)return;
+    total+=models.length;
+    html+='<div class="sec-header">'+sec.label+'</div>';
+    models.forEach(function(m){
+      var isOpen=openCards.has(m.name),isDone=considered.has(m.name);
+      var bCls=m.src==='m'?'m':m.src==='both'?'both':'fs';
+      var bTxt=m.src==='m'?'Munger':m.src==='both'?'Both':'FS';
+      var esc=m.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html+='<div class="model-card'+(isOpen?' open':'')+(isDone?' considered':'')+(m.src==='m'?' munger-add':'')+'">'+
+        '<div class="model-header" onclick="toggleCard(\''+esc+'\')">'+
+        '<div class="model-check"><span class="check-mark">&#10003;</span></div>'+
+        '<div class="model-name">'+m.name+'</div>'+
+        '<span class="src-badge '+bCls+'">'+bTxt+'</span>'+
+        '<span class="expand-icon">&#9662;</span>'+
+        '</div>';
+      if(isOpen){
+        html+='<div class="model-body">'+
+          '<div class="model-desc">'+m.note+'</div>'+
+          '<div class="model-cat-tag">'+sec.label+'</div>'+
+          '<button class="consider-btn" onclick="toggleConsidered(\''+esc+'\',event)">'+
+          (isDone?'&#10003; Considered &mdash; tap to clear':'Mark as considered')+
+          '</button></div>';
+      }
+      html+='</div>';
+    });
+  });
+  if(!html)html='<div style="padding:40px 0;text-align:center;color:var(--text3);font-size:13px;">No models match &ldquo;'+q+'&rdquo;</div>';
+  document.getElementById('list').innerHTML=html;
+  document.getElementById('count').innerHTML='<span>'+total+'</span> model'+(total!==1?'s':'');
+  document.getElementById('considered-stat').innerHTML=considered.size>0?'<span>'+considered.size+'</span> considered':'';
+}
+
+function toggleCard(name){openCards.has(name)?openCards.delete(name):openCards.add(name);render();}
+
+function toggleConsidered(name,e){
+  e.stopPropagation();
+  considered.has(name)?considered.delete(name):considered.add(name);
+  saveConsidered();render();
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-browse').classList.toggle('active',m==='browse');
+  document.getElementById('btn-suggest').classList.toggle('active',m==='suggest');
+  document.getElementById('browse-controls').style.display=m==='browse'?'':'none';
+  document.getElementById('scroll').style.display=m==='browse'?'':'none';
+  document.getElementById('suggest-view').style.display=m==='suggest'?'flex':'none';
+}
+
+function buildPrompt(){
+  var situation=document.getElementById('situation').value.trim();
+  if(!situation){document.getElementById('situation').focus();return;}
+  var modelList=SECTIONS.map(function(s){
+    return s.label+':\n'+s.models.map(function(m){return '- '+m.name+': '+m.note;}).join('\n');
+  }).join('\n\n');
+  var prompt='I am working through a situation and need help identifying which mental models are most relevant.\n\nMY SITUATION:\n'+situation+'\n\nTASK:\nFrom the complete latticework of mental models listed below, identify the 6-8 most relevant models for my specific situation.\n\nFor each model:\n1. State the model name\n2. In one sentence, explain exactly how it applies to my situation\n3. Give me one specific question I should ask myself right now\n\nPrioritise models that are directly actionable, not just tangentially related. Favour models that reveal blind spots or challenge my current framing.\n\n--- COMPLETE MODEL LIBRARY ---\n\n'+modelList;
+  document.getElementById('prompt-text').textContent=prompt;
+  document.getElementById('prompt-output').style.display='block';
+  document.getElementById('copy-confirm').style.display='none';
+  setTimeout(function(){document.getElementById('prompt-output').scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+
+function copyPrompt(){
+  var text=document.getElementById('prompt-text').textContent;
+  var confirm=document.getElementById('copy-confirm');
+  var doConfirm=function(){confirm.style.display='block';setTimeout(function(){confirm.style.display='none';},2500);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(doConfirm).catch(function(){fallbackCopy(text,doConfirm);});
+  } else {fallbackCopy(text,doConfirm);}
+}
+
+function fallbackCopy(text,cb){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');cb();}catch(e){}
+  document.body.removeChild(ta);
+}
+
+function openClaude(){window.open('https://claude.ai/new','_blank');}
+
+buildCats();render();
+
+(function(){
+  try{
+    var c=document.createElement('canvas');c.width=180;c.height=180;
+    var ctx=c.getContext('2d');
+    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(0,0,180,180,36);ctx.fillStyle='#0f0e0d';ctx.fill();}
+    else{ctx.fillStyle='#0f0e0d';ctx.fillRect(0,0,180,180);}
+    ctx.fillStyle='#c8a96e';ctx.font='600 52px -apple-system,Helvetica';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('MM',90,85);
+    ctx.fillStyle='rgba(200,169,110,0.35)';ctx.font='400 15px -apple-system,Helvetica';
+    ctx.fillText('MENTAL MODELS',90,122);
+    var lnk=document.createElement('link');lnk.rel='apple-touch-icon';lnk.href=c.toDataURL('image/png');
+    document.head.appendChild(lnk);
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
